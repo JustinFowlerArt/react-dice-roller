@@ -1,20 +1,36 @@
 import { useState } from 'react';
+import { Dice } from './dice';
+
+interface iDice {
+	id: number;
+	quantity: number;
+	sides: number;
+}
 
 export const DieRoller = () => {
-	const [dice, setDice] = useState({
-		quantity: 1,
-		sides: 6,
-	});
+	const [dice, setDice] = useState<Array<iDice>>([
+		{
+			id: 1,
+			quantity: 1,
+			sides: 6,
+		},
+	]);
 	const [total, setTotal] = useState(1);
-	const [rolls, setRolls] = useState<Array<number>>([]);
+	const [rolls, setRolls] = useState<Array<iDice>>([]);
 
 	const rollDice = () => {
-		const results = [];
+		const results: iDice[] = [];
 		let total = 0;
-		for (let i = 0; i < dice.quantity; i++) {
-			const roll = Math.ceil(Math.random() * dice.sides);
-			results.push(roll);
-			total += roll;
+		for (let index = 0; index < dice.length; index++) {
+			for (let i = 0; i < dice[index].quantity; i++) {
+				const roll = Math.ceil(Math.random() * dice[index].sides);
+				results.push({
+					id: results.length + 1,
+					quantity: roll,
+					sides: dice[index].sides,
+				});
+				total += roll;
+			}
 		}
 		return { results, total };
 	};
@@ -29,84 +45,100 @@ export const DieRoller = () => {
 	const handleChange = (
 		e:
 			| React.ChangeEvent<HTMLInputElement>
-			| React.ChangeEvent<HTMLSelectElement>
+			| React.ChangeEvent<HTMLSelectElement>,
+		index: number
 	) => {
 		const { name, value } = e.target;
 		const input: number = parseFloat(value);
-		setDice({ ...dice, [name]: input });
+		const updatedDice = [...dice];
+		updatedDice[index][name as keyof iDice] = input;
+		setDice(updatedDice);
 		setRolls([]);
+	};
+
+	const handleAdd = () => {
+		setDice([
+			...dice,
+			{
+				id: dice.length + 1,
+				quantity: 1,
+				sides: 6,
+			},
+		]);
+	};
+
+	const handleRemove = (index: number) => {
+		const updatedDice = [...dice];
+		updatedDice.splice(index, 1);
+		setDice(updatedDice);
 	};
 
 	return (
 		<>
 			<form
-				className='flex flex-col items-center'
+				className='flex flex-col items-center mt-4'
 				onSubmit={e => handleSubmit(e)}
 			>
-				<div className='flex'>
-					<div className='flex flex-col items-center'>
-						<label htmlFor='diceQuantity'>Number of Dice</label>
-						<input
-							type='number'
-							name='quantity'
-							value={dice.quantity}
-							onChange={e => handleChange(e)}
-							className='border w-1/2'
-						></input>
-					</div>
-					<div className='flex flex-col items-center'>
-						<label htmlFor='diceSides'>Number of Sides</label>
-
-						<select
-							name='sides'
-							value={dice.sides}
-							onChange={e => handleChange(e)}
-						>
-							<option value={4}>4 sided</option>
-							<option value={6}>6 sided</option>
-							<option value={8}>8 sided</option>
-							<option value={10}>10 sided</option>
-							<option value={12}>12 sided</option>
-							<option value={20}>20 sided</option>
-						</select>
-					</div>
-				</div>
-				<button type='submit' className='mt-6 bg-slate-200 w-12 rounded-md'>
+				{dice.map((die, index) => {
+					return (
+						<Dice
+							key={die.id}
+							index={index}
+							quantity={die.quantity}
+							sides={die.sides}
+							handleChange={handleChange}
+							handleAdd={handleAdd}
+							handleRemove={handleRemove}
+						/>
+					);
+				})}
+				<button
+					type='submit'
+					className='mt-6 bg-slate-700 text-white w-12 rounded-md'
+				>
 					Roll
 				</button>
 			</form>
 			<ul className='mt-6 border-2 w-40 min-h-[2rem]'>
-				{rolls?.map((roll, index) => {
-					if (dice.sides === 20) {
-						if (roll === 20) {
+				{rolls?.map(roll => {
+					if (roll.sides === 20) {
+						if (roll.quantity === 20) {
 							return (
-								<li key={index} className='font-bold'>
-									{roll} - Crit Success!
+								<li key={roll.id} className='font-bold'>
+									d{roll.sides}: {roll.quantity} - Crit Success!
 								</li>
 							);
-						} else if (roll === 1) {
+						} else if (roll.quantity === 1) {
 							return (
-								<li key={index} className='italic'>
-									{roll} - Crit Fail!
+								<li key={roll.id} className='italic'>
+									d{roll.sides}: {roll.quantity} - Crit Fail!
 								</li>
 							);
 						} else {
-							return <li key={index}>{roll}</li>;
+							return (
+								<li key={roll.id}>
+									d{roll.sides}: {roll.quantity}
+								</li>
+							);
 						}
 					} else {
-						if (roll === dice.sides) {
+						if (roll.quantity === roll.sides) {
 							return (
-								<li key={index} className='font-bold'>
-									{roll} - Max!
+								<li key={roll.id} className='font-bold'>
+									d{roll.sides}: {roll.quantity} - Max!
 								</li>
 							);
 						} else {
-							return <li key={index}>{roll}</li>;
+							return (
+								<li key={roll.id}>
+									d{roll.sides}: {roll.quantity}
+								</li>
+							);
 						}
 					}
 				})}
 			</ul>
-			{rolls.length > 0 && dice.sides !== 20 && <p>Total: {total}</p>}
+			{rolls.length > 0 && <p>Total: {total}</p>}
 		</>
 	);
 };
