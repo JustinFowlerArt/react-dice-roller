@@ -1,10 +1,3 @@
-# react-dev-environment
+# react-dice-roller
 
-Tools that still need to be implemented:
-- Continuous Integration
-    - Jenkins
-- Error Logging
-    - Track.js
-- Automated Deployment
-    - API: Heroku
-    - UI: Surge
+Dice roller that allows you to roll multiple types and quantities of dice simultaneously
